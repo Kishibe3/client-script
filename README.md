@@ -130,15 +130,43 @@ If [Number] is more than 64, it will only drop items 64 times.
 
 ex. player('drop', '36')
 
+### player('look', '[yaw] [pitch]')
+
+Modify player's look direction.
+
+ex. player('look', '90 0') Player will look at -x direction.
+
+### player('move', '[x] [y] [z]')
+
+Move player to coordinate (x, y, z).
+
+ex. player('move', '-39.7 67.0 94.6')
+
+[#] Note that although you can assign wherever position, you cannot move more than 10 blocks (or sqrt(300) if you are fall flying) a time on a dedicated server. Also, both integrated and dedicated servers will somehow teleport you back if you jump after you use this function to move. It is still under development. Feel free to tell me if you have a good solution.
+
+See net.minecraft.server.network/ServerPlayNetworkHandler.class/onPlayerMove() for more information.
+
 ### player('swapHands')
 
 Swap the mainhand item with offhand item.
 
 ### player('hotbar', '[Number]')
 
-Change hotbar to hotbar [Number]. [Number] should be 0 to 8.
+Change selected slot to hotbar [Number]. [Number] should be 0 to 8.
 
 ex. player('hotbar', '2')
+
+### player('chat', '[Message]')
+
+Send message to chat. It is also possible to use it to run sever side command.
+
+ex. player('chat', 'can anyone plz give me free armor?')
+
+### player('setCamera', '[Entity Selector]')
+
+Set camera to the selected entity. Note that the entity selector should only select 1 entity.
+
+ex. player('setCamera', '@e[type=chicken,distance=..10,limit=1]')
 
 ## License
 
