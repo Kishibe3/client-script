@@ -1,6 +1,36 @@
 # Client Script Mod
 
-## Usage
+This is a mod that use the scarpet language to control player's action. [See the scarpet documentation](https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Documentation.md). Some of the code in this mod is same as in [carpet mod](https://github.com/gnembon/fabric-carpet), credit belongs to carpet mod.
+
+This mod doesn't support the Minecraft API part of scarpet language because it is just a client side mod.
+
+# Usage
+
+## Cscript Command
+
+There are 2 unique apps which are special for this mod: [load.sc]() and [main.sc](). [load.sc]() will be loaded and executed once the Minecraft client is running. [main.sc]() will be loaded once the Minecraft client is running and executed every tick in game. Below are some `/cscript` command usage:
+
+### `/cscript run [expression]`
+
+Calculate the expression.
+
+ex. /cscript run 1+1
+
+### `/cscript globals`
+
+Show the global variables and global functions.
+
+### `/cscript load [app]`
+
+Load and execute app (.sc or .scl files) globally in .minecraft/config/cscript folder.
+
+### `/cscript reload`
+
+Reload [load.sc]() and [main.sc]() app.
+
+## Additional Functions
+
+Although this mod doesn't support Minecraft API part of scarpet, it adds some functions to enrich this mod. Here are the functions:
 
 ### run([Client Command])
 
@@ -168,6 +198,6 @@ Set camera to the selected entity. Note that the entity selector should only sel
 
 ex. player('setCamera', '@e[type=chicken,distance=..10,limit=1]')
 
-## License
+# License
 
 This mod is under the CC0 license.
