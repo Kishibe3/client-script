@@ -26,7 +26,7 @@ Load and execute app (.sc or .scl files) globally in .minecraft/config/cscript f
 
 ### `/cscript reload`
 
-Reload [load.sc]() and [main.sc]() app.
+Reload load.sc and main.sc app.
 
 ## Additional Functions
 
