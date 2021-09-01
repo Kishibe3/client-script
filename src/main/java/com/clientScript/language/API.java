@@ -506,6 +506,8 @@ public class API {
                 		}
                 		mcc.player.setPos(x, y, z);
                 	}
+                	else
+                		throw new InternalExpressionException("Wrong block position format at second argument.");
                 	break;
                 }
                 case "mine":
