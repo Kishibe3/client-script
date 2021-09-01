@@ -9,19 +9,27 @@ import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import com.google.common.collect.Lists;
 import com.google.common.primitives.Doubles;
 
 import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
+import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractItemC2SPacket;
+import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket;
+import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.text.LiteralText;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
@@ -36,6 +44,8 @@ import com.clientScript.value.NumericValue;
 import com.clientScript.value.Value;
 
 public class API {
+	private static final Logger LOGGER = LogManager.getLogger();
+	
     public static List<? extends Entity> getEntities(String selector) throws Exception {
         selector = selector.replaceAll("\\s", "");
         String entitySelectorOption = "type=!?[a-z_]+(?::[a-z_]+)?|sort=(nearest|furthest|random|arbitrary)|limit=\\d+|name=!?\\w+|distance=(\\d+(\\.\\d+)?\\.\\.\\d+(\\.\\d+)?|\\d+(\\.\\d+)?\\.\\.|(\\.\\.)?\\d+(\\.\\d+)?)|x=-?\\d+(\\.\\d+)?|y=-?\\d+(\\.\\d+)?|z=-?\\d+(\\.\\d+)?|dx=-?\\d+(\\.\\d+)?|dy=-?\\d+(\\.\\d+)?||dz=-?\\d+(\\.\\d+)?";
@@ -283,23 +293,26 @@ public class API {
                     if (lv.size() > 3)
                         throw new InternalExpressionException("Too many arguments");
                     else if (lv.size() == 1 || lv.size() == 2) {
-                        switch(mcc.crosshairTarget.getType()) {
-                            case ENTITY:
-                                if (lv.size() == 2 && !lv.get(1).evalValue(c, Context.STRING).getString().equals("entity"))
-                                    break;
-                                mcc.getNetworkHandler().sendPacket(new PlayerInteractEntityC2SPacket(((EntityHitResult)mcc.crosshairTarget).getEntity(), false));
-                                mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));  // just for anti-anticheat
-                                break;
-                            case BLOCK: {
-                                BlockHitResult bhr = (BlockHitResult)mcc.crosshairTarget;
-                                if (lv.size() == 2 && !lv.get(1).evalValue(c, Context.STRING).getString().equals("block"))
-                                    break;
-                                mcc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, bhr.getBlockPos(), bhr.getSide()));
-                                mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));  // just for anti-anticheat
-                                break;
-                            }
-                            case MISS:
+                    	if (lv.size() == 2 && !lv.get(1).evalValue(c, Context.STRING).getString().equals("entity") && !lv.get(1).evalValue(c, Context.STRING).getString().equals("block"))
+                    		throw new InternalExpressionException("The second argument should be either 'block' or 'entity'.");
+                        if (mcc.crosshairTarget != null) {
+                        	switch(mcc.crosshairTarget.getType()) {
+	                            case ENTITY:
+	                                if (lv.size() == 2 && !lv.get(1).evalValue(c, Context.STRING).getString().equals("entity"))
+	                                    break;
+	                                mcc.getNetworkHandler().sendPacket(new PlayerInteractEntityC2SPacket(((EntityHitResult)mcc.crosshairTarget).getEntity(), mcc.player.isSneaking()));
+	                                break;
+	                            case BLOCK: {
+	                                BlockHitResult bhr = (BlockHitResult)mcc.crosshairTarget;
+	                                if (lv.size() == 2 && !lv.get(1).evalValue(c, Context.STRING).getString().equals("block"))
+	                                    break;
+	                                mcc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, bhr.getBlockPos(), bhr.getSide()));
+	                                break;
+	                            }
+	                            case MISS:
+	                        }
                         }
+                        mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
                     }
                     else {
                         if (lv.get(1).evalValue(c, Context.STRING).getString().equals("block")) {
@@ -314,7 +327,7 @@ public class API {
                                 m1.find();
                                 z = Integer.parseInt(m1.group());
                                 mcc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, new BlockPos(x, y, z), Direction.UP));
-                                mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));  // just for anti-anticheat
+                                mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
                             }
                             else
                                 throw new InternalExpressionException("Wrong block position format at second argument.");
@@ -323,8 +336,8 @@ public class API {
                             try {
                                 Iterator<? extends Entity> entities = API.getEntities(lv.get(2).evalValue(c, Context.STRING).getString()).iterator();
                                 while (entities.hasNext()) {
-                                    mcc.getNetworkHandler().sendPacket(new PlayerInteractEntityC2SPacket(entities.next(), false));
-                                    mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));  // just for anti-anticheat
+                                    mcc.getNetworkHandler().sendPacket(new PlayerInteractEntityC2SPacket(entities.next(), mcc.player.isSneaking()));
+                                    mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -336,17 +349,68 @@ public class API {
                     break;
                 case "use": {
                     mcc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(mcc.player.inventory.selectedSlot));
-                    if (lv.size() != 2)
-                        throw new InternalExpressionException("Use action needs 2 arguments.");
-                    switch (lv.get(1).evalValue(c, Context.STRING).getString()) {
-                        case "mainHand":
-                            mcc.getNetworkHandler().sendPacket(new PlayerInteractItemC2SPacket(Hand.MAIN_HAND));
-                            break;
-                        case "offHand":
-                            mcc.getNetworkHandler().sendPacket(new PlayerInteractItemC2SPacket(Hand.OFF_HAND));
-                            break;
-                        default:
-                            throw new InternalExpressionException("Wrong second argument.");
+                    if (lv.size() > 4)
+                        throw new InternalExpressionException("Too many arguments.");
+                    if (lv.size() == 1) {
+                    	Hand[] var1 = Hand.values();
+                    	for (int i=0; i<var1.length; i++)
+                    		API.useItem(mcc, var1[i], null, null, null);
+                    }
+                    else if (lv.size() == 2 || lv.size() == 3) {
+                    	if (lv.size() == 3 && !lv.get(2).evalValue(c, Context.STRING).getString().equals("entity") && !lv.get(2).evalValue(c, Context.STRING).getString().equals("block"))
+                    		throw new InternalExpressionException("The third argument should be either 'block' or 'entity'.");
+	                    switch (lv.get(1).evalValue(c, Context.STRING).getString()) {
+	                        case "mainHand":
+	                            API.useItem(mcc, Hand.MAIN_HAND, null, null, lv.size() == 3? lv.get(2).evalValue(c, Context.STRING).getString() : null);
+	                            break;
+	                        case "offHand":
+	                        	API.useItem(mcc, Hand.OFF_HAND, null, null, lv.size() == 3? lv.get(2).evalValue(c, Context.STRING).getString() : null);
+	                            break;
+	                        default:
+	                            throw new InternalExpressionException("The second argument should be either 'mainHand' or 'offHand'.");
+	                    }
+                    }
+                    else {
+                    	Hand hand = null;
+                    	switch (lv.get(1).evalValue(c, Context.STRING).getString()) {
+	                        case "mainHand": {
+	                        	hand = Hand.MAIN_HAND;
+	                            break;
+	                        }
+	                        case "offHand": {
+	                        	hand = Hand.OFF_HAND;
+	                            break;
+	                        }
+	                        default:
+	                            throw new InternalExpressionException("The second argument should be either 'mainHand' or 'offHand'.");
+                    	}
+                    	if (lv.get(2).evalValue(c, Context.STRING).getString().equals("block")) {
+                    		Matcher m1 = Pattern.compile("-?\\d+ -?\\d+ -?\\d+").matcher(lv.get(3).evalValue(c, Context.STRING).getString());
+                            if (m1.find()) {
+                                int x, y, z;
+                                m1 = Pattern.compile("-?\\d+").matcher(lv.get(3).evalValue(c, Context.STRING).getString());
+                                m1.find();
+                                x = Integer.parseInt(m1.group());
+                                m1.find();
+                                y = Integer.parseInt(m1.group());
+                                m1.find();
+                                z = Integer.parseInt(m1.group());
+                                API.useItem(mcc, hand, null, new BlockPos(x, y, z), "block");
+                            }
+                            else
+                                throw new InternalExpressionException("Wrong block position format at 4th argument.");
+                    	}
+                    	else if (lv.get(2).evalValue(c, Context.STRING).getString().equals("entity")) {
+                    		try {
+                                Iterator<? extends Entity> entities = API.getEntities(lv.get(3).evalValue(c, Context.STRING).getString()).iterator();
+                                while (entities.hasNext())
+                                	API.useItem(mcc, hand, entities.next(), null, "entity");
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                    	}
+                    	else
+                    		throw new InternalExpressionException("The third argument should be either 'block' or 'entity'.");
                     }
                     break;
                 }
@@ -408,19 +472,41 @@ public class API {
                         throw new InternalExpressionException("Look action needs 2 arguments.");
                     Matcher m1 = Pattern.compile("-?\\d+(\\.\\d+)? -?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
                     if (m1.find()) {
-                        int yaw, pitch;
+                        float yaw, pitch;
                         m1 = Pattern.compile("-?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
                         m1.find();
                         yaw = Float.parseFloat(m1.group());
                         m1.find();
                         pitch = Float.parseFloat(m1.group());
+                        mcc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookOnly(yaw, pitch, true));
+                        mcc.player.yaw = yaw;
+                        mcc.player.pitch = pitch;
                     }
                     else
-                        throw new InternalExpressionException("");
+                        throw new InternalExpressionException("Wrong angle format at second argument.");
                     break;
                 }
                 case "move": {
-                    break;
+                	if (lv.size() != 2)
+                        throw new InternalExpressionException("Move action needs 2 arguments.");
+                	Matcher m1 = Pattern.compile("-?\\d+(\\.\\d+)? -?\\d+(\\.\\d+)? -?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
+                	if (m1.find() ) {
+                		double x, y, z;
+                		m1 = Pattern.compile("-?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
+                		m1.find();
+                		x = Double.parseDouble(m1.group());
+                		m1.find();
+                		y = Double.parseDouble(m1.group());
+                		m1.find();
+                		z = Double.parseDouble(m1.group());
+                		mcc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionOnly(x, y, z, false));
+                		if (mcc.getNetworkHandler().getConnection().getPacketListener() instanceof ServerPlayNetworkHandler) {  // for update lastTickX, lastTickY, lastTickZ in net.minecraft.server.network/ServerPlayNetworkHandler.class
+                			((ServerPlayNetworkHandler)mcc.getNetworkHandler().getConnection().getPacketListener()).syncWithPlayerPosition();
+                			LOGGER.info("Sync player position.");
+                		}
+                		mcc.player.setPos(x, y, z);
+                	}
+                	break;
                 }
                 case "mine":
                     mcc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(mcc.player.inventory.selectedSlot));
@@ -453,5 +539,95 @@ public class API {
             }
             return (cc, tt) -> Value.NULL;
         });
+    }
+    
+    private static void useItem(MinecraftClient mcc, Hand hand, Entity en, BlockPos bos, String action) {
+    	ItemStack itemStack = mcc.player.getStackInHand(hand);
+    	if (en == null && bos == null) {
+    		if (mcc.crosshairTarget != null) {
+    			switch(mcc.crosshairTarget.getType()) {
+    				case ENTITY: {
+    					if (action != null && !action.equals("entity"))
+    						return;
+    					Entity entity = ((EntityHitResult)mcc.crosshairTarget).getEntity();
+    					Vec3d vec3d = ((EntityHitResult)mcc.crosshairTarget).getPos().subtract(entity.getPos());
+    					mcc.getNetworkHandler().sendPacket(new PlayerInteractEntityC2SPacket(entity, hand, vec3d, mcc.player.isSneaking()));
+    					ActionResult actionResult = entity.interactAt(mcc.player, vec3d, hand);
+    					if (!actionResult.isAccepted()) {
+    						mcc.getNetworkHandler().sendPacket(new PlayerInteractEntityC2SPacket(entity, hand, mcc.player.isSneaking()));
+    						actionResult = mcc.player.interact(entity, hand);
+    					}
+    					if (actionResult.isAccepted()) {
+                            if (actionResult.shouldSwingHand())
+                            	mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+                            return;
+    					}
+    					break;
+    				}
+    				case BLOCK: {
+    					if (action != null && !action.equals("block"))
+    						return;
+    					BlockHitResult bhr = (BlockHitResult)mcc.crosshairTarget;
+    					int ic = itemStack.getCount();
+    					mcc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(hand, bhr));
+    					ActionResult actionResult = mcc.world.getBlockState(bhr.getBlockPos()).onUse(mcc.world, mcc.player, hand, bhr);
+    					if (actionResult.isAccepted()) {
+    						if (actionResult.shouldSwingHand()) {
+    							mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+    							if (!itemStack.isEmpty() && itemStack.getCount() != ic)
+    								mcc.gameRenderer.firstPersonRenderer.resetEquipProgress(hand);
+    						}
+    						return;
+    					}
+    					if (actionResult == ActionResult.FAIL)
+    						return;
+    					break;
+    				}
+    				case MISS:
+    			}
+    		}
+    	}
+    	else if (en != null && action.equals("entity")){
+    		mcc.getNetworkHandler().sendPacket(new PlayerInteractEntityC2SPacket(en, hand, new Vec3d(0, 0, 0), mcc.player.isSneaking()));
+    		ActionResult actionResult = en.interactAt(mcc.player, new Vec3d(0, 0, 0), hand);
+			if (!actionResult.isAccepted()) {
+				mcc.getNetworkHandler().sendPacket(new PlayerInteractEntityC2SPacket(en, hand, mcc.player.isSneaking()));
+				actionResult = mcc.player.interact(en, hand);
+			}
+			if (actionResult.isAccepted()) {
+                if (actionResult.shouldSwingHand())
+                	mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+                return;
+			}
+    	}
+    	else if (bos != null && action.equals("block")) {
+    		BlockHitResult bhr = BlockHitResult.createMissed(new Vec3d(0, 0, 0), Direction.UP, bos);
+			int ic = itemStack.getCount();
+			mcc.getNetworkHandler().sendPacket(new PlayerInteractBlockC2SPacket(hand, bhr));
+			ActionResult actionResult = mcc.world.getBlockState(bhr.getBlockPos()).onUse(mcc.world, mcc.player, hand, bhr);
+			if (actionResult.isAccepted()) {
+				if (actionResult.shouldSwingHand()) {
+					mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+					if (!itemStack.isEmpty() && itemStack.getCount() != ic)
+						mcc.gameRenderer.firstPersonRenderer.resetEquipProgress(hand);
+				}
+				return;
+			}
+			if (actionResult == ActionResult.FAIL)
+				return;
+    	}
+    	else
+    		return;
+    	
+		if (!itemStack.isEmpty() && (action == null || action.equals("block") || action.equals("entity"))) {
+			mcc.getNetworkHandler().sendPacket(new PlayerInteractItemC2SPacket(hand));
+			ActionResult actionResult = mcc.player.getStackInHand(hand).use(mcc.world, mcc.player, hand).getResult();
+			if (actionResult.isAccepted()) {
+                if (actionResult.shouldSwingHand())
+                	mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(hand));
+                mcc.gameRenderer.firstPersonRenderer.resetEquipProgress(hand);
+                return;
+             }
+		}
     }
 }
