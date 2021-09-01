@@ -1,6 +1,6 @@
 # Client Script Mod
 
-This is a mod that use the scarpet language to control player's action. [See the scarpet documentation](https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Documentation.md). Some of the code in this mod is same as in [carpet mod](https://github.com/gnembon/fabric-carpet), credit belongs to carpet mod.
+This is a fabric mod that use the scarpet language to control player's action. [See the scarpet documentation](https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Documentation.md). Some of the code in this mod is same as in [carpet mod](https://github.com/gnembon/fabric-carpet), credit belongs to carpet mod.
 
 This mod doesn't support the Minecraft API part of scarpet language because it is just a client side mod.
 
