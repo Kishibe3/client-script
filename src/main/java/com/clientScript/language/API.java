@@ -36,6 +36,7 @@ import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 import com.clientScript.exception.InternalExpressionException;
@@ -475,9 +476,9 @@ public class API {
                         float yaw, pitch;
                         m1 = Pattern.compile("-?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
                         m1.find();
-                        yaw = Float.parseFloat(m1.group());
+                        yaw = Float.parseFloat(m1.group()) % 360.0F;
                         m1.find();
-                        pitch = Float.parseFloat(m1.group());
+                        pitch = MathHelper.clamp(Float.parseFloat(m1.group()), -90.0F, 90.0F) % 360.0F;
                         mcc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookOnly(yaw, pitch, true));
                         mcc.player.yaw = yaw;
                         mcc.player.pitch = pitch;
@@ -486,7 +487,7 @@ public class API {
                         throw new InternalExpressionException("Wrong angle format at second argument.");
                     break;
                 }
-                case "move": {
+                case "move": {  // TODO need to prevent teleport back to origin coordinate sometimes
                 	if (lv.size() != 2)
                         throw new InternalExpressionException("Move action needs 2 arguments.");
                 	Matcher m1 = Pattern.compile("-?\\d+(\\.\\d+)? -?\\d+(\\.\\d+)? -?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
