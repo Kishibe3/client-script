@@ -8,7 +8,7 @@ This mod doesn't support the Minecraft API part of scarpet language because it i
 
 ## Cscript Command
 
-There are 2 unique apps which are special for this mod: [load.sc]() and [main.sc](). [load.sc]() will be loaded and executed once the Minecraft client is running. [main.sc]() will be loaded once the Minecraft client is running and executed every tick in game. Below are some `/cscript` command usage:
+There are 2 unique apps which are special for this mod: load.sc and main.sc. load.sc will be loaded and executed once the Minecraft client is running. main.sc will be loaded once the Minecraft client is running and executed every tick in game. Below are some `/cscript` command usage:
 
 ### `/cscript run [expression]`
 
