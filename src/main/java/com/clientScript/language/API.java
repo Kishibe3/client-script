@@ -269,6 +269,123 @@ public class API {
         }
         throw new InternalExpressionException("Wrong entity selector format.");
     }
+    
+    public static double[] CoordHelper(String str) {
+    	Matcher m1 = Pattern.compile("^[\\^~]?-?\\d+(\\.\\d+)?|[\\^~] [\\^~]?-?\\d+(\\.\\d+)?|[\\^~] [\\^~]?-?\\d+(\\.\\d+)?|[\\^~]$").matcher(str);
+    	MinecraftClient mcc = MinecraftClient.getInstance();
+    	double[] rtn = new double[3];
+    	if (m1.find()) {
+    		if (str.charAt(0) == '^') {
+    			double x, y, z;
+    			m1 = Pattern.compile("\\^-?\\d+(\\.\\d+)?|\\^").matcher(str);
+        		m1.find();
+        		x = m1.group().equals("^")? 0D : Double.parseDouble(m1.group().substring(1));
+        		if (!m1.find())
+        			return new double[0];
+        		y = m1.group().equals("^")? 0D : Double.parseDouble(m1.group().substring(1));
+        		if (!m1.find())
+        			return new double[0];
+        		z = m1.group().equals("^")? 0D : Double.parseDouble(m1.group().substring(1));
+        		double sy = Math.sin(mcc.player.yaw * Math.PI / 180D), cy = Math.cos(mcc.player.yaw * Math.PI / 180D);
+        		double sp = Math.sin(mcc.player.pitch * Math.PI / 180D), cp = Math.cos(mcc.player.pitch * Math.PI / 180D);
+        		rtn[0] = x * cy - y * sp * sy - z * cp * sy + mcc.player.getX();
+        		rtn[1] = y * cp - z * sp + mcc.player.getY();
+        		rtn[2] = x * sy + y * sp * cy + z * cp * cy + mcc.player.getZ();
+        		return rtn;
+    		}
+    		else {
+    			m1 = Pattern.compile("~?-?\\d+(\\.\\d+)?|~").matcher(str);
+        		m1.find();
+        		if (m1.group().charAt(0) == '~')
+        			rtn[0] = m1.group().equals("~")? mcc.player.getX() : Double.parseDouble(m1.group().substring(1)) + mcc.player.getX();
+        		else
+        			rtn[0] = Double.parseDouble(m1.group());
+        		if (!m1.find())
+        			return new double[0];
+        		if (m1.group().charAt(0) == '~')
+        			rtn[1] = m1.group().equals("~")? mcc.player.getY() : Double.parseDouble(m1.group().substring(1)) + mcc.player.getY();
+        		else
+        			rtn[1] = Double.parseDouble(m1.group());
+        		if (!m1.find())
+        			return new double[0];
+        		if (m1.group().charAt(0) == '~')
+        			rtn[2] = m1.group().equals("~")? mcc.player.getZ() : Double.parseDouble(m1.group().substring(1)) + mcc.player.getZ();
+        		else
+        			rtn[2] = Double.parseDouble(m1.group());
+        		return rtn;
+    		}
+    	}
+    	return new double[0];
+    }
+    
+    public static float[] AngleHelper(String str) {
+    	Matcher m1 = Pattern.compile("^~?-?\\d+(\\.\\d+)?|~ ~?-?\\d+(\\.\\d+)?|~$").matcher(str);
+    	MinecraftClient mcc = MinecraftClient.getInstance();
+    	float[] rtn = new float[2];
+    	if (m1.find()) {
+    		m1 = Pattern.compile("~?-?\\d+(\\.\\d+)?|~").matcher(str);
+    		m1.find();
+    		if (m1.group().charAt(0) == '~')
+    			rtn[0] = m1.group().equals("~")? mcc.player.yaw : (Float.parseFloat(m1.group().substring(1)) + mcc.player.yaw) % 360.0F;
+    		else
+    			rtn[0] = Float.parseFloat(m1.group()) % 360.0F;
+    		m1.find();
+    		if (m1.group().charAt(0) == '~')
+    			rtn[1] = m1.group().equals("~")? mcc.player.pitch : MathHelper.clamp(Float.parseFloat(m1.group().substring(1)) + mcc.player.pitch, -90.0F, 90.0F) % 360.0F;
+    		else
+    			rtn[1] = MathHelper.clamp(Float.parseFloat(m1.group()), -90.0F, 90.0F) % 360.0F;
+    		return rtn;
+    	}
+    	return new float[0];
+    }
+    
+    public static int[] BlockPosHelper(String str) {
+    	Matcher m1 = Pattern.compile("^[\\^~]?-?\\d+(\\.\\d+)?|[\\^~] [\\^~]?-?\\d+(\\.\\d+)?|[\\^~] [\\^~]?-?\\d+(\\.\\d+)?|[\\^~]$").matcher(str);
+    	MinecraftClient mcc = MinecraftClient.getInstance();
+    	int[] rtn = new int[3];
+    	if (m1.find()) {
+    		if (str.charAt(0) == '^') {
+    			double x, y, z;
+    			m1 = Pattern.compile("\\^-?\\d+(\\.\\d+)?|\\^").matcher(str);
+        		m1.find();
+        		x = m1.group().equals("^")? 0D : Double.parseDouble(m1.group().substring(1));
+        		if (!m1.find())
+        			return new int[0];
+        		y = m1.group().equals("^")? 0D : Double.parseDouble(m1.group().substring(1));
+        		if (!m1.find())
+        			return new int[0];
+        		z = m1.group().equals("^")? 0D : Double.parseDouble(m1.group().substring(1));
+        		double sy = Math.sin(mcc.player.yaw * Math.PI / 180D), cy = Math.cos(mcc.player.yaw * Math.PI / 180D);
+        		double sp = Math.sin(mcc.player.pitch * Math.PI / 180D), cp = Math.cos(mcc.player.pitch * Math.PI / 180D);
+        		rtn[0] = (int)Math.floor(x * cy - y * sp * sy - z * cp * sy + mcc.player.getX());
+        		rtn[1] = (int)Math.floor(y * cp - z * sp + mcc.player.getY());
+        		rtn[2] = (int)Math.floor(x * sy + y * sp * cy + z * cp * cy + mcc.player.getZ());
+        		return rtn;
+    		}
+    		else {
+    			m1 = Pattern.compile("~?-?\\d+(\\.\\d+)?|~").matcher(str);
+        		m1.find();
+        		if (m1.group().charAt(0) == '~')
+        			rtn[0] = (int)Math.floor(mcc.player.getX() + (m1.group().equals("~")? 0D : Double.parseDouble(m1.group().substring(1))));
+        		else
+        			rtn[0] = (int)Math.floor(Double.parseDouble(m1.group()));
+        		if (!m1.find())
+        			return new int[0];
+        		if (m1.group().charAt(0) == '~')
+        			rtn[1] = (int)Math.floor(mcc.player.getY() + (m1.group().equals("~")? 0D : Double.parseDouble(m1.group().substring(1))));
+        		else
+        			rtn[1] = (int)Math.floor(Double.parseDouble(m1.group()));
+        		if (!m1.find())
+        			return new int[0];
+        		if (m1.group().charAt(0) == '~')
+        			rtn[2] = (int)Math.floor(mcc.player.getZ() + (m1.group().equals("~")? 0D : Double.parseDouble(m1.group().substring(1))));
+        		else
+        			rtn[2] = (int)Math.floor(Double.parseDouble(m1.group()));
+        		return rtn;
+    		}
+    	}
+    	return new int[0];
+    }
 
     public static void apply(Expression expression) {
         // run client side command, can only run commands registered to ClientCommandManager.DISPATCHER
@@ -317,20 +434,12 @@ public class API {
                     }
                     else {
                         if (lv.get(1).evalValue(c, Context.STRING).getString().equals("block")) {
-                            Matcher m1 = Pattern.compile("-?\\d+ -?\\d+ -?\\d+").matcher(lv.get(2).evalValue(c, Context.STRING).getString());
-                            if (m1.find()) {
-                                int x, y, z;
-                                m1 = Pattern.compile("-?\\d+").matcher(lv.get(2).evalValue(c, Context.STRING).getString());
-                                m1.find();
-                                x = Integer.parseInt(m1.group());
-                                m1.find();
-                                y = Integer.parseInt(m1.group());
-                                m1.find();
-                                z = Integer.parseInt(m1.group());
-                                mcc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, new BlockPos(x, y, z), Direction.UP));
+                        	int[] bos = API.BlockPosHelper(lv.get(2).evalValue(c, Context.STRING).getString());
+                        	if (bos.length == 3) {
+                        		mcc.getNetworkHandler().sendPacket(new PlayerActionC2SPacket(PlayerActionC2SPacket.Action.START_DESTROY_BLOCK, new BlockPos(bos[0], bos[1], bos[2]), Direction.UP));
                                 mcc.getNetworkHandler().sendPacket(new HandSwingC2SPacket(Hand.MAIN_HAND));
-                            }
-                            else
+                        	}
+                        	else
                                 throw new InternalExpressionException("Wrong block position format at second argument.");
                         }
                         else if (lv.get(1).evalValue(c, Context.STRING).getString().equals("entity")) {
@@ -386,18 +495,10 @@ public class API {
 	                            throw new InternalExpressionException("The second argument should be either 'mainHand' or 'offHand'.");
                     	}
                     	if (lv.get(2).evalValue(c, Context.STRING).getString().equals("block")) {
-                    		Matcher m1 = Pattern.compile("-?\\d+ -?\\d+ -?\\d+").matcher(lv.get(3).evalValue(c, Context.STRING).getString());
-                            if (m1.find()) {
-                                int x, y, z;
-                                m1 = Pattern.compile("-?\\d+").matcher(lv.get(3).evalValue(c, Context.STRING).getString());
-                                m1.find();
-                                x = Integer.parseInt(m1.group());
-                                m1.find();
-                                y = Integer.parseInt(m1.group());
-                                m1.find();
-                                z = Integer.parseInt(m1.group());
-                                API.useItem(mcc, hand, null, new BlockPos(x, y, z), "block");
-                            }
+                    		int[] bos = API.BlockPosHelper(lv.get(3).evalValue(c, Context.STRING).getString());
+                    		if (bos.length == 3) {
+                    			API.useItem(mcc, hand, null, new BlockPos(bos[0], bos[1], bos[2]), "block");
+                    		}
                             else
                                 throw new InternalExpressionException("Wrong block position format at 4th argument.");
                     	}
@@ -471,17 +572,11 @@ public class API {
                 case "look": {
                     if (lv.size() != 2)
                         throw new InternalExpressionException("Look action needs 2 arguments.");
-                    Matcher m1 = Pattern.compile("-?\\d+(\\.\\d+)? -?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
-                    if (m1.find()) {
-                        float yaw, pitch;
-                        m1 = Pattern.compile("-?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
-                        m1.find();
-                        yaw = Float.parseFloat(m1.group()) % 360.0F;
-                        m1.find();
-                        pitch = MathHelper.clamp(Float.parseFloat(m1.group()), -90.0F, 90.0F) % 360.0F;
-                        mcc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookOnly(yaw, pitch, true));
-                        mcc.player.yaw = yaw;
-                        mcc.player.pitch = pitch;
+                    float[] ang = API.AngleHelper(lv.get(1).evalValue(c, Context.STRING).getString());
+                    if (ang.length == 2) {
+                        mcc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookOnly(ang[0], ang[1], true));
+                        mcc.player.yaw = ang[0];
+                        mcc.player.pitch = ang[1];
                     }
                     else
                         throw new InternalExpressionException("Wrong angle format at second argument.");
@@ -490,22 +585,14 @@ public class API {
                 case "move": {  // TODO need to prevent teleport back to origin coordinate sometimes
                 	if (lv.size() != 2)
                         throw new InternalExpressionException("Move action needs 2 arguments.");
-                	Matcher m1 = Pattern.compile("-?\\d+(\\.\\d+)? -?\\d+(\\.\\d+)? -?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
-                	if (m1.find() ) {
-                		double x, y, z;
-                		m1 = Pattern.compile("-?\\d+(\\.\\d+)?").matcher(lv.get(1).evalValue(c, Context.STRING).getString());
-                		m1.find();
-                		x = Double.parseDouble(m1.group());
-                		m1.find();
-                		y = Double.parseDouble(m1.group());
-                		m1.find();
-                		z = Double.parseDouble(m1.group());
-                		mcc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionOnly(x, y, z, false));
-                		if (mcc.getNetworkHandler().getConnection().getPacketListener() instanceof ServerPlayNetworkHandler) {  // for update lastTickX, lastTickY, lastTickZ in net.minecraft.server.network/ServerPlayNetworkHandler.class
+                	double[] coord = API.CoordHelper(lv.get(1).evalValue(c, Context.STRING).getString());
+                	if (coord.length == 3) {
+                		mcc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionOnly(coord[0], coord[1], coord[2], false));
+                		if (mcc.getNetworkHandler().getConnection().getPacketListener() instanceof ServerPlayNetworkHandler) {
                 			((ServerPlayNetworkHandler)mcc.getNetworkHandler().getConnection().getPacketListener()).syncWithPlayerPosition();
                 			LOGGER.info("Sync player position.");
                 		}
-                		mcc.player.setPos(x, y, z);
+                		mcc.player.setPos(coord[0], coord[1], coord[2]);
                 	}
                 	else
                 		throw new InternalExpressionException("Wrong block position format at second argument.");
