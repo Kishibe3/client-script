@@ -39,7 +39,9 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
+import com.clientScript.argument.BlockArgument;
 import com.clientScript.exception.InternalExpressionException;
+import com.clientScript.value.BlockValue;
 import com.clientScript.value.FormattedTextValue;
 import com.clientScript.value.NumericValue;
 import com.clientScript.value.Value;
@@ -388,7 +390,6 @@ public class API {
     }
 
     public static void apply(Expression expression) {
-        // run client side command, can only run commands registered to ClientCommandManager.DISPATCHER
         expression.addContextFunction("run", 1, (c, t, lv) -> {
             try {
                 return new NumericValue(ClientCommandManager.DISPATCHER.execute(lv.get(0).getString(), Expression.source));
@@ -400,7 +401,7 @@ public class API {
 
         expression.addLazyFunction("player", -1, (c, t, lv) -> {
             if (lv.size() == 0)
-                throw new InternalExpressionException("'player' function needs at least 1 argument to assign player's action");
+                throw new InternalExpressionException("'player' function needs at least 1 argument to assign player's action.");
             MinecraftClient mcc = MinecraftClient.getInstance();
             if (mcc.player == null)
                 return (cc, tt) -> Value.NULL;
@@ -409,7 +410,7 @@ public class API {
                 case "attack":
                     mcc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(mcc.player.inventory.selectedSlot));
                     if (lv.size() > 3)
-                        throw new InternalExpressionException("Too many arguments");
+                        throw new InternalExpressionException("Too many arguments.");
                     else if (lv.size() == 1 || lv.size() == 2) {
                     	if (lv.size() == 2 && !lv.get(1).evalValue(c, Context.STRING).getString().equals("entity") && !lv.get(1).evalValue(c, Context.STRING).getString().equals("block"))
                     		throw new InternalExpressionException("The second argument should be either 'block' or 'entity'.");
@@ -625,9 +626,18 @@ public class API {
                     break;
                 }
                 default:
-                    throw new InternalExpressionException("unsupported player action");
+                    throw new InternalExpressionException("Unsupported player action.");
             }
             return (cc, tt) -> Value.NULL;
+        });
+        
+        expression.addContextFunction("block", -1, (c, t, lv) -> {
+        	if (lv.size() == 0)
+                throw new InternalExpressionException("'block' function needs at least 1 argument.");
+        	BlockValue retval = BlockArgument.findIn(c, lv, 0, true).block;
+        	retval.getBlockState();
+        	retval.getData();
+        	return retval;
         });
     }
     
