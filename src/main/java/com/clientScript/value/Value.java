@@ -183,13 +183,15 @@ public abstract class Value implements Comparable<Value>, Cloneable {
         if (o instanceof NumericValue || o instanceof ListValue || o instanceof ThreadValue) {
             return -o.compareTo(this);
         }
+        if (o instanceof BlockValue)
+        	return ((BlockValue)o).compareTo(this);
         return getString().compareTo(o.getString());
     }
 
     @Override // for hashmap key access, and == operator
     public boolean equals(final Object o) {
         if (o instanceof Value)
-            return this.compareTo((Value)o) == 0;
+            return compareTo((Value)o) == 0;
         return false;
     }
 
