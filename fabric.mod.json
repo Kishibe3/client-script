@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "id": "client-script",
+  "version": "${version}",
+
+  "name": "Client Script",
+  "description": "A client side mod used for scripting player interaction.",
+  "authors": [
+    "Kishibe3"
+  ],
+  "contact": {
+    "homepage": "https://github.com/Kishibe3/client-script",
+    "sources": "https://github.com/Kishibe3/client-script"
+  },
+
+  "license": "CC0-1.0",
+  "icon": "assets/clientScript/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "client": [
+      "com.clientScript.Main"
+    ]
+  },
+  "mixins": [
+    "clientScript.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.11.3",
+    "fabric": "*",
+    "minecraft": "1.17.x",
+    "java": ">=16"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
