@@ -28,6 +28,10 @@ public class ListValue extends AbstractListValue implements ContainerValueInterf
     protected ListValue(List<Value> list) {
         this.items = list;
     }
+
+    public static ListValue warp(List<Value> list) {
+        return new ListValue(list);
+    }
     
     @Override
     public String getString() {
