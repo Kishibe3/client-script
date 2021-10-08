@@ -25,7 +25,6 @@ import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractItemC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -38,23 +37,20 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.clientScript.argument.BlockArgument;
 import com.clientScript.exception.InternalExpressionException;
 import com.clientScript.utils.ShapesRenderer.ShapeDispatcher;
 import com.clientScript.utils.ShapesRenderer.ShapesRenderer;
 import com.clientScript.value.BlockValue;
+import com.clientScript.value.EntityValue;
 import com.clientScript.value.FormattedTextValue;
 import com.clientScript.value.ListValue;
 import com.clientScript.value.NumericValue;
 import com.clientScript.value.Value;
 
 public class API {
-	private static final Logger LOGGER = LogManager.getLogger();
-	
-    public static List<? extends Entity> getEntities(String selector) throws Exception {
+	public static List<? extends Entity> getEntities(String selector) throws Exception {
         selector = selector.replaceAll("\\s", "");
         String entitySelectorOption = "type=!?[a-z_]+(?::[a-z_]+)?|sort=(nearest|furthest|random|arbitrary)|limit=\\d+|name=!?\\w+|distance=(\\d+(\\.\\d+)?\\.\\.\\d+(\\.\\d+)?|\\d+(\\.\\d+)?\\.\\.|(\\.\\.)?\\d+(\\.\\d+)?)|x=-?\\d+(\\.\\d+)?|y=-?\\d+(\\.\\d+)?|z=-?\\d+(\\.\\d+)?|dx=-?\\d+(\\.\\d+)?|dy=-?\\d+(\\.\\d+)?||dz=-?\\d+(\\.\\d+)?";
         if (selector.matches("@[aeprs]\\[(" + entitySelectorOption + ")?(?:,(" + entitySelectorOption + "))*\\]") || selector.matches("@[aeprs]")) {
@@ -594,10 +590,6 @@ public class API {
                 	double[] coord = API.CoordHelper(lv.get(1).evalValue(c, Context.STRING).getString());
                 	if (coord.length == 3) {
                 		mcc.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.PositionAndOnGround(coord[0], coord[1], coord[2], false));
-                		if (mcc.getNetworkHandler().getConnection().getPacketListener() instanceof ServerPlayNetworkHandler) {
-                			((ServerPlayNetworkHandler)mcc.getNetworkHandler().getConnection().getPacketListener()).syncWithPlayerPosition();
-                			LOGGER.info("Sync player position.");
-                		}
                 		mcc.player.setPos(coord[0], coord[1], coord[2]);
                 	}
                 	else
@@ -662,6 +654,21 @@ public class API {
             
             ShapesRenderer.addShape(shapes);
             return Value.TRUE;
+        });
+
+        expression.addContextFunction("entity_selector", -1, (c, t, lv) -> {
+            if (lv.size() != 1)
+                throw new InternalExpressionException("'entity_selector' function needs 1 argument.");
+            List<Value> retList = new ArrayList<>();
+            try {
+                API.getEntities(lv.get(0).getString()).forEach(e -> {
+                    retList.add(new EntityValue(e));
+                });
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+            return ListValue.warp(retList);
         });
     }
     
