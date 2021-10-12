@@ -19,7 +19,7 @@ This mod doesn't support the Minecraft API part of scarpet language because it i
 
 # cscript command
 
-There are 2 unique apps which are special for this mod: **load.sc** and **main.sc**. load.sc will be loaded and executed once the Minecraft client is running. main.sc will be loaded once the Minecraft client is running and executed every tick in game. They are just like mcfunctions that have a load or tick tag when you are writing datapacks. **Both should be placed in .minecraft/config/cscript folder.**
+There are 2 unique apps which are special for this mod: <span style="color: red">load.sc</span> and <span style="color: red">main.sc</span>. load.sc will be loaded and executed once the Minecraft client is running. main.sc will be loaded once the Minecraft client is running and executed every tick in game. They are just like mcfunctions that have a load or tick tag when you are writing datapacks. <span style="color: red">Both should be placed in .minecraft/config/cscript folder.</span>
 
 Below are some usage of `/cscript` command:
 
@@ -35,7 +35,7 @@ Show the global variables and global functions.
 
 ### `/cscript load [app]`
 
-Load and execute app (.sc or .scl files) globally in .minecraft/config/cscript folder. **Apps should be put in .minecraft/config/cscript folder.**
+Load and execute app (.sc or .scl files) globally in .minecraft/config/cscript folder. <span style="color: red">Apps should be put in .minecraft/config/cscript folder.</span>
 
 ex. /cscript load attack.sc
 
