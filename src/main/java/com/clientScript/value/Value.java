@@ -61,13 +61,13 @@ public abstract class Value implements Comparable<Value>, Cloneable {
     public Value divide(Value v) {
         if (v instanceof NumericValue) {
             String lstr = getString();
-            return new StringValue(lstr.substring(0, (int)(lstr.length()/ ((NumericValue)v).getDouble())));
+            return new StringValue(lstr.substring(0, (int)(lstr.length() / ((NumericValue)v).getDouble())));
         }
         return new StringValue(getString() + "/" + v.getString());
     }
 
     public Value slice(long fromDesc, Long toDesc) {
-        String value = this.getString();
+        String value = getString();
         int size = value.length();
         int from = ListValue.normalizeIndex(fromDesc, size);
         if (toDesc == null)
@@ -183,8 +183,6 @@ public abstract class Value implements Comparable<Value>, Cloneable {
         if (o instanceof NumericValue || o instanceof ListValue || o instanceof ThreadValue) {
             return -o.compareTo(this);
         }
-        if (o instanceof BlockValue)
-        	return ((BlockValue)o).compareTo(this);
         return getString().compareTo(o.getString());
     }
 

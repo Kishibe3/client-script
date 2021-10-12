@@ -3,8 +3,7 @@ package com.clientScript.value;
 public interface ContainerValueInterface {
     boolean put(Value where, Value value);
 
-    default boolean put(Value where, Value value, Value conditions)
-    {
+    default boolean put(Value where, Value value, Value conditions) {
         return put(where, value);
     }
 

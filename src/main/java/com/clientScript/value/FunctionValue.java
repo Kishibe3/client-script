@@ -162,10 +162,8 @@ public class FunctionValue extends Value implements Fluff.ILazyFunction {
         List<Value> params = new ArrayList<>();
         for (LazyValue lv : lazyParams) {
             Value param = lv.evalValue(c, Context.NONE);
-            if (param instanceof FunctionUnpackedArgumentsValue) {
-                //CarpetSettings.LOG.error("How did we get here?");  // TODO remove comment
+            if (param instanceof FunctionUnpackedArgumentsValue)
                 params.addAll(((ListValue) param).getItems());
-            }
             else
                 params.add(param);
         }

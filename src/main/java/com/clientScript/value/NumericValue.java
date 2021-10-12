@@ -11,6 +11,8 @@ import com.google.gson.JsonPrimitive;
 
 import org.apache.commons.lang3.StringUtils;
 
+import net.minecraft.nbt.AbstractNbtNumber;
+
 public class NumericValue extends Value {
     private Long longValue;
     private final double value;
@@ -110,9 +112,14 @@ public class NumericValue extends Value {
                 return new NumericValue(this.longValue + nv.longValue);
             return new NumericValue(this.value + nv.value);
         }
+        if (v instanceof ListValue)
+            return v.add(this);
+        if (v instanceof NBTSerializableValue && ((NBTSerializableValue)v).getNbt() instanceof AbstractNbtNumber)
+            return new NumericValue(this.value + ((AbstractNbtNumber)((NBTSerializableValue)v).getNbt()).doubleValue());
         return super.add(v);
     }
 
+    @Override
     public Value subtract(Value v) {  // TODO test if definintn add(NumericVlaue) woud solve the casting
         if (v instanceof NumericValue) {
             NumericValue nv = (NumericValue)v;
@@ -120,9 +127,12 @@ public class NumericValue extends Value {
                 return new NumericValue(this.longValue - nv.longValue);
             return new NumericValue(this.value - nv.value);
         }
+        if (v instanceof NBTSerializableValue && ((NBTSerializableValue)v).getNbt() instanceof AbstractNbtNumber)
+            return new NumericValue(this.value - ((AbstractNbtNumber)((NBTSerializableValue)v).getNbt()).doubleValue());
         return super.subtract(v);
     }
 
+    @Override
     public Value multiply(Value v) {
         if (v instanceof NumericValue) {
             NumericValue nv = (NumericValue)v;
@@ -132,12 +142,17 @@ public class NumericValue extends Value {
         }
         if (v instanceof ListValue)
             return v.multiply(this);
+        if (v instanceof NBTSerializableValue && ((NBTSerializableValue)v).getNbt() instanceof AbstractNbtNumber)
+            return new NumericValue(this.value * ((AbstractNbtNumber)((NBTSerializableValue)v).getNbt()).doubleValue());
         return new StringValue(StringUtils.repeat(v.getString(), (int)getLong()));
     }
 
+    @Override
     public Value divide(Value v) {
         if (v instanceof NumericValue)
             return new NumericValue(getDouble() / ((NumericValue)v).getDouble());
+        if (v instanceof NBTSerializableValue && ((NBTSerializableValue)v).getNbt() instanceof AbstractNbtNumber)
+            return new NumericValue(this.value / ((AbstractNbtNumber)((NBTSerializableValue)v).getNbt()).doubleValue());
         return super.divide(v);
     }
 
@@ -230,7 +245,7 @@ public class NumericValue extends Value {
             NumericValue no = (NumericValue)o;
             if (this.longValue != null && no.longValue != null)
                 return this.longValue.equals(no.longValue);
-            return !this.subtract(no).getBoolean();
+            return !subtract(no).getBoolean();
         }
         return super.equals(o);
     }

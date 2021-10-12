@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.clientScript.exception.InternalExpressionException;
 import com.clientScript.value.AbstractListValue;
+import com.clientScript.value.BlockValue;
 import com.clientScript.value.BooleanValue;
 import com.clientScript.value.ContainerValueInterface;
 import com.clientScript.value.FunctionAnnotationValue;
@@ -140,14 +141,14 @@ public class Operators {
 
         expression.addBinaryOperator("~", Operators.precedence.get("attribute~:"), true, Value::in);
 
-        expression.addBinaryOperator(">", Operators.precedence.get("compare>=><=<"), false, (v1, v2) -> BooleanValue.of(v1.compareTo(v2) > 0));
+        expression.addBinaryOperator(">", Operators.precedence.get("compare>=><=<"), false, (v1, v2) -> BooleanValue.of((v1 instanceof BlockValue && v1.compareTo(v2) == 2)? false : v1.compareTo(v2) > 0));
         expression.addFunction("decreasing", lv -> {
             int size = lv.size();
             if (size < 2)
                 return Value.TRUE;
             Value prev = lv.get(0);
             for (Value next : lv.subList(1, size)) {
-                if (prev.compareTo(next) <= 0)
+                if (prev.compareTo(next) <= 0 || (prev instanceof BlockValue && prev.compareTo(next) == 2))
                     return Value.FALSE;
                 prev = next;
             }
@@ -155,14 +156,14 @@ public class Operators {
         });
         expression.addFunctionalEquivalence(">", "decreasing");
 
-        expression.addBinaryOperator(">=", Operators.precedence.get("compare>=><=<"), false, (v1, v2) -> BooleanValue.of(v1.compareTo(v2) >= 0));
+        expression.addBinaryOperator(">=", Operators.precedence.get("compare>=><=<"), false, (v1, v2) -> BooleanValue.of((v1 instanceof BlockValue && v1.compareTo(v2) == 2)? false : v1.compareTo(v2) >= 0));
         expression.addFunction("nonincreasing", lv -> {
             int size = lv.size();
             if (size < 2)
                 return Value.TRUE;
             Value prev = lv.get(0);
             for (Value next: lv.subList(1, size)) {
-                if (prev.compareTo(next) < 0)
+                if (prev.compareTo(next) < 0 || (prev instanceof BlockValue && prev.compareTo(next) == 2))
                     return Value.FALSE;
                 prev = next;
             }
@@ -170,14 +171,14 @@ public class Operators {
         });
         expression.addFunctionalEquivalence(">=", "nonincreasing");
 
-        expression.addBinaryOperator("<", Operators.precedence.get("compare>=><=<"), false, (v1, v2) -> BooleanValue.of(v1.compareTo(v2) < 0));
+        expression.addBinaryOperator("<", Operators.precedence.get("compare>=><=<"), false, (v1, v2) -> BooleanValue.of((v1 instanceof BlockValue && v1.compareTo(v2) == 2)? false : v1.compareTo(v2) < 0));
         expression.addFunction("increasing", lv -> {
             int size = lv.size();
             if (size < 2)
                 return Value.TRUE;
             Value prev = lv.get(0);
             for (Value next: lv.subList(1, size)) {
-                if (prev.compareTo(next) >= 0)
+                if (prev.compareTo(next) >= 0 || (prev instanceof BlockValue && prev.compareTo(next) == 2))
                     return Value.FALSE;
                 prev = next;
             }
@@ -185,14 +186,14 @@ public class Operators {
         });
         expression.addFunctionalEquivalence("<", "increasing");
 
-        expression.addBinaryOperator("<=", Operators.precedence.get("compare>=><=<"), false, (v1, v2) -> BooleanValue.of(v1.compareTo(v2) <= 0));
+        expression.addBinaryOperator("<=", Operators.precedence.get("compare>=><=<"), false, (v1, v2) -> BooleanValue.of((v1 instanceof BlockValue && v1.compareTo(v2) == 2)? false : v1.compareTo(v2) <= 0));
         expression.addFunction("nondecreasing", lv -> {
             int size = lv.size();
             if (size < 2)
                 return Value.TRUE;
             Value prev = lv.get(0);
             for (Value next: lv.subList(1, size)) {
-                if (prev.compareTo(next) > 0)
+                if (prev.compareTo(next) > 0 || (prev instanceof BlockValue && prev.compareTo(next) == 2))
                     return Value.FALSE;
                 prev = next;
             }

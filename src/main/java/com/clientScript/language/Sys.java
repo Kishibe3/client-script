@@ -242,7 +242,7 @@ public class Sys {
         });
 
         expression.addUnaryFunction("print", v -> {
-            //System.out.println(v.getString());
+            System.out.println(v.getString());
             return v; // pass through for variables
         });
 

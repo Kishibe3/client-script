@@ -1,22 +1,48 @@
 package com.clientScript.language;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.primitives.Doubles;
+
+import com.mojang.serialization.Decoder;
+import com.mojang.serialization.Encoder;
+import com.mojang.serialization.MapCodec;
 
 import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
 
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtByte;
+import net.minecraft.nbt.NbtShort;
+import net.minecraft.nbt.NbtInt;
+import net.minecraft.nbt.NbtLong;
+import net.minecraft.nbt.NbtFloat;
+import net.minecraft.nbt.NbtDouble;
+import net.minecraft.nbt.NbtByteArray;
+import net.minecraft.nbt.NbtIntArray;
+import net.minecraft.nbt.NbtLongArray;
+import net.minecraft.nbt.NbtString;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
 import net.minecraft.network.packet.c2s.play.HandSwingC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
@@ -25,9 +51,11 @@ import net.minecraft.network.packet.c2s.play.PlayerInteractEntityC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerInteractItemC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket;
+import net.minecraft.state.property.Property;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -35,8 +63,11 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.registry.Registry;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.clientScript.argument.BlockArgument;
 import com.clientScript.exception.InternalExpressionException;
@@ -46,10 +77,13 @@ import com.clientScript.value.BlockValue;
 import com.clientScript.value.EntityValue;
 import com.clientScript.value.FormattedTextValue;
 import com.clientScript.value.ListValue;
+import com.clientScript.value.NBTSerializableValue;
 import com.clientScript.value.NumericValue;
 import com.clientScript.value.Value;
 
 public class API {
+    public static Logger LOGGER = LogManager.getLogger();
+
 	public static List<? extends Entity> getEntities(String selector) throws Exception {
         selector = selector.replaceAll("\\s", "");
         String entitySelectorOption = "type=!?[a-z_]+(?::[a-z_]+)?|sort=(nearest|furthest|random|arbitrary)|limit=\\d+|name=!?\\w+|distance=(\\d+(\\.\\d+)?\\.\\.\\d+(\\.\\d+)?|\\d+(\\.\\d+)?\\.\\.|(\\.\\.)?\\d+(\\.\\d+)?)|x=-?\\d+(\\.\\d+)?|y=-?\\d+(\\.\\d+)?|z=-?\\d+(\\.\\d+)?|dx=-?\\d+(\\.\\d+)?|dy=-?\\d+(\\.\\d+)?||dz=-?\\d+(\\.\\d+)?";
@@ -274,7 +308,7 @@ public class API {
     }
     
     public static double[] CoordHelper(String str) {
-    	Matcher m1 = Pattern.compile("^[\\^~]?-?\\d+(\\.\\d+)?|[\\^~] [\\^~]?-?\\d+(\\.\\d+)?|[\\^~] [\\^~]?-?\\d+(\\.\\d+)?|[\\^~]$").matcher(str);
+    	Matcher m1 = Pattern.compile("^[\\^~]?-?\\d+(\\.\\d+)?|[\\^~]\\s+[\\^~]?-?\\d+(\\.\\d+)?|[\\^~]\\s+[\\^~]?-?\\d+(\\.\\d+)?|[\\^~]$").matcher(str);
     	MinecraftClient mcc = MinecraftClient.getInstance();
     	double[] rtn = new double[3];
     	if (m1.find()) {
@@ -322,7 +356,7 @@ public class API {
     }
     
     public static float[] AngleHelper(String str) {
-    	Matcher m1 = Pattern.compile("^~?-?\\d+(\\.\\d+)?|~ ~?-?\\d+(\\.\\d+)?|~$").matcher(str);
+    	Matcher m1 = Pattern.compile("^~?-?\\d+(\\.\\d+)?|~\\s+~?-?\\d+(\\.\\d+)?|~$").matcher(str);
     	MinecraftClient mcc = MinecraftClient.getInstance();
     	float[] rtn = new float[2];
     	if (m1.find()) {
@@ -343,7 +377,7 @@ public class API {
     }
     
     public static int[] BlockPosHelper(String str) {
-    	Matcher m1 = Pattern.compile("^[\\^~]?-?\\d+(\\.\\d+)?|[\\^~] [\\^~]?-?\\d+(\\.\\d+)?|[\\^~] [\\^~]?-?\\d+(\\.\\d+)?|[\\^~]$").matcher(str);
+    	Matcher m1 = Pattern.compile("^[\\^~]?-?\\d+(\\.\\d+)?|[\\^~]\\s+[\\^~]?-?\\d+(\\.\\d+)?|[\\^~]\\s+[\\^~]?-?\\d+(\\.\\d+)?|[\\^~]$").matcher(str);
     	MinecraftClient mcc = MinecraftClient.getInstance();
     	int[] rtn = new int[3];
     	if (m1.find()) {
@@ -390,6 +424,119 @@ public class API {
     	return new int[0];
     }
 
+    public static BlockState BlockStateHelper(String str) throws Exception {
+        str = str.replaceAll("\\s", "");
+        Matcher m1 = Pattern.compile("[a-z_]+(\\[[a-z_]+=\\w+(,[a-z_]+=\\w+)*\\])?").matcher(str);
+        if (!m1.find())
+            throw new InternalExpressionException("Wrong BlockState format.");
+        m1 = Pattern.compile("[a-z_]+$|[a-z_]+(?=\\[)").matcher(str);
+        m1.find();
+        Block block = Registry.BLOCK.get(new Identifier(m1.group()));
+        m1 = Pattern.compile("[a-z_]+=\\w+").matcher(str);
+        Map<Property<?>, Comparable<?>> blockProperties = Maps.newHashMap();
+        Function<Block, BlockState> ds = Block::getDefaultState;
+        Optional<?> opt;
+        
+        while (m1.find()) {
+            Matcher m2 = Pattern.compile("[a-z_]+(?==)").matcher(m1.group());
+            m2.find();
+            Property<?> property = block.getStateManager().getProperty(m2.group());
+            if (property == null)
+                throw new InternalExpressionException("Unknown property.");
+            if (blockProperties.containsKey(property))
+                throw new InternalExpressionException("Duplicated property.");
+            m2 = Pattern.compile("(?<==)\\w+").matcher(m1.group());
+            m2.find();
+            opt = property.parse(m2.group());
+            if (opt.isPresent())
+			    blockProperties.put(property, (Comparable<?>)opt.get());
+            else
+                throw new InternalExpressionException("Invalid property.");
+        }
+
+        return new BlockState(block, ImmutableMap.copyOf(blockProperties), MapCodec.of(Encoder.empty(), Decoder.unit(ds.apply(block))));
+    }
+
+    /*
+     * return true if a contains b
+     */
+    public static boolean containNBT(NbtElement a, NbtElement b) {
+		if (b == null)
+			return true;
+		if (a == null)
+			return false;
+		if (a.getType() != b.getType())
+			return false;
+		switch(a.getType()) {
+			case 0:
+				return b.getType() == 0;
+			case 1:
+				return ((NbtByte)a).equals((NbtByte)b);
+			case 2:
+				return ((NbtShort)a).equals((NbtShort)b);
+			case 3:
+				return ((NbtInt)a).equals((NbtInt)b);
+			case 4:
+				return ((NbtLong)a).equals((NbtLong)b);
+			case 5:
+				return ((NbtFloat)a).equals((NbtFloat)b);
+			case 6:
+				return ((NbtDouble)a).equals((NbtDouble)b);
+			case 7: {
+				byte[] aarray = ((NbtByteArray)a).getByteArray(), barray = ((NbtByteArray)b).getByteArray();
+				Byte[] aArray = new Byte[aarray.length], bArray = new Byte[barray.length];
+				Arrays.setAll(aArray, i -> aarray[i]);
+				Arrays.setAll(bArray, i -> barray[i]);
+				return compareList(aArray, bArray);
+			}
+			case 8:
+				return ((NbtString)a).asString().contains(((NbtString)b).asString());
+			case 9: {
+				List<NbtElement> al = new ArrayList<>(), bl = new ArrayList<>();
+				for (int i=0; i<((NbtList)a).size(); i++)
+					al.add(((NbtList)a).get(i));
+				for (int i=0; i<((NbtList)b).size(); i++)
+					bl.add(((NbtList)b).get(i));
+				Iterator<NbtElement> ibl = (new HashSet<>(bl)).iterator();
+				while (ibl.hasNext()) {
+					int count = 0;
+					NbtElement iblitem = ibl.next();
+					for (int i=0; i<al.size(); i++) {
+						if (containNBT(al.get(i), iblitem))
+							count++;
+					}
+					if (count < Collections.frequency(bl, iblitem))
+						return false;
+				}
+				return true;
+			}
+			case 10: {
+				Iterator<String> ib = ((NbtCompound)b).getKeys().iterator();
+				while (ib.hasNext()) {
+					String key = ib.next();
+					if (!containNBT(((NbtCompound)a).get(key), ((NbtCompound)b).get(key)))
+						return false;
+				}
+				return true;
+			}
+			case 11: {
+				int[] aarray = ((NbtIntArray)a).getIntArray(), barray = ((NbtIntArray)b).getIntArray();
+				Integer[] aArray = new Integer[aarray.length], bArray = new Integer[barray.length];
+				Arrays.setAll(aArray, i -> aarray[i]);
+				Arrays.setAll(bArray, i -> barray[i]);
+				return compareList(aArray, bArray);
+			}
+			case 12: {
+				long[] aarray = ((NbtLongArray)a).getLongArray(), barray = ((NbtLongArray)b).getLongArray();
+				Long[] aArray = new Long[aarray.length], bArray = new Long[barray.length];
+				Arrays.setAll(aArray, i -> aarray[i]);
+				Arrays.setAll(bArray, i -> barray[i]);
+				return compareList(aArray, bArray);
+			}
+		}
+		return true;
+	}
+	
     public static void apply(Expression expression) {
         expression.addContextFunction("run", 1, (c, t, lv) -> {
             try {
@@ -665,10 +812,26 @@ public class API {
                     retList.add(new EntityValue(e));
                 });
             }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
+            catch (Exception e) {}
             return ListValue.warp(retList);
+        });
+
+        expression.addContextFunction("query", -1, (c, t, lv) -> {
+            if (lv.size() != 2)
+                throw new InternalExpressionException("'query' takes entity as a first argument, and queried path as a second.");
+            List<? extends Entity> le = new ArrayList<>();
+            try {
+                le = API.getEntities(lv.get(0).getString());
+            } catch (Exception exc) {}
+
+            if (le.size() != 1)
+                throw new InternalExpressionException("Should only select one entity.");
+            EntityValue e = new EntityValue(le.get(0));
+            String path = lv.get(1).getString();
+            try {
+                return new NBTSerializableValue(e.getData(path));
+            } catch (Exception exc) {}
+            return Value.NULL;
         });
     }
     
@@ -756,4 +919,14 @@ public class API {
              }
 		}
     }
+
+	private static <T> boolean compareList(T[] a, T[] b) {
+		Iterator<T> ib = (new HashSet<>(Arrays.asList(b))).iterator();
+		while (ib.hasNext()) {
+			T bitem = ib.next();
+			if (Collections.frequency(Arrays.asList(a), bitem) < Collections.frequency(Arrays.asList(b), bitem))
+				return false;
+		}
+		return true;
+	}
 }

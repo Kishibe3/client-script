@@ -25,7 +25,7 @@ public class MapValue extends AbstractListValue implements ContainerValueInterfa
         this.map = new HashMap<>();
     }
 
-    private MapValue(Map<Value,Value> other) {
+    private MapValue(Map<Value, Value> other) {
         this.map = other;
     }
     

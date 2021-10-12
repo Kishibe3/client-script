@@ -26,6 +26,7 @@ import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.lwjgl.opengl.GL11;
 
 public class ShapesRenderer {
 	private static final Map<String, Map<RegistryKey<World>, Long2ObjectOpenHashMap<RenderedShape<? extends ShapeDispatcher.ExpiringShape>>>> shapes = new HashMap<>();
@@ -92,6 +93,7 @@ public class ShapesRenderer {
                		entry -> entry.getValue().isExpired(currentTime)
                 );
 				MatrixStack matrixStack = RenderSystem.getModelViewStack();
+                GL11.glDisable(GL11.GL_DEPTH_TEST);  // render through blocks
 				matrixStack.push();
 				matrixStack.method_34425(matrices.peek().getModel());
 				RenderSystem.applyModelViewMatrix();
@@ -112,6 +114,7 @@ public class ShapesRenderer {
 
 				RenderSystem.lineWidth(1.0F);
 				matrixStack.pop();
+                GL11.glEnable(GL11.GL_DEPTH_TEST);
 				RenderSystem.applyModelViewMatrix();
         	}
         }

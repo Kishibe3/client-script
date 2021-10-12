@@ -64,11 +64,12 @@ public class ListValue extends AbstractListValue implements ContainerValueInterf
                 throw new InternalExpressionException("Cannot add two lists of uneven sizes");
         }
         else
-            for (Value v : this.items)
+            for (Value v: this.items)
                 output.items.add(v.add(other));
         return output;
     }
 
+    @Override
     public Value subtract(Value other) {
         ListValue output = new ListValue();
         if (other instanceof ListValue) {
@@ -80,11 +81,12 @@ public class ListValue extends AbstractListValue implements ContainerValueInterf
                 throw new InternalExpressionException("Cannot subtract two lists of uneven sizes");
         }
         else
-            for (Value v : this.items)
+            for (Value v: this.items)
                 output.items.add(v.subtract(other));
         return output;
     }
 
+    @Override
     public Value multiply(Value other) {
         ListValue output = new ListValue();
         if (other instanceof ListValue) {
@@ -97,11 +99,12 @@ public class ListValue extends AbstractListValue implements ContainerValueInterf
                 throw new InternalExpressionException("Cannot multiply two lists of uneven sizes");
         }
         else
-            for (Value v : this.items)
+            for (Value v: this.items)
                 output.items.add(v.multiply(other));
         return output;
     }
 
+    @Override
     public Value divide(Value other) {
         ListValue output = new ListValue();
         if (other instanceof ListValue) {
@@ -113,7 +116,7 @@ public class ListValue extends AbstractListValue implements ContainerValueInterf
                 throw new InternalExpressionException("Cannot divide two lists of uneven sizes");
         }
         else
-            for (Value v : this.items)
+            for (Value v: this.items)
                 output.items.add(v.divide(other));
         return output;
     }
@@ -246,7 +249,7 @@ public class ListValue extends AbstractListValue implements ContainerValueInterf
                 return this_size - o_size;
             if (this_size == 0)
                 return 0;
-            for (int i = 0; i < this_size; i++) {
+            for (int i=0; i<this_size; i++) {
                 int res = this.items.get(i).compareTo(ol.items.get(i));
                 if (res != 0)
                     return res;
@@ -264,7 +267,7 @@ public class ListValue extends AbstractListValue implements ContainerValueInterf
     private boolean put(Value ind, Value value, boolean replace, boolean extend) {
         if (ind.isNull()) {
             if (extend && value instanceof AbstractListValue)
-                ((AbstractListValue)value).iterator().forEachRemaining((v)-> this.items.add(v));
+                ((AbstractListValue)value).iterator().forEachRemaining(v -> this.items.add(v));
             else
                 this.items.add(value);
         }

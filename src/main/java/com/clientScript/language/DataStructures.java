@@ -37,7 +37,7 @@ public class DataStructures {
                 throw new InternalExpressionException("'join' takes at least 2 arguments");
             String delimiter = lv.get(0).getString();
             List<Value> toJoin;
-            if (lv.size()==2 && lv.get(1) instanceof LazyListValue)
+            if (lv.size() == 2 && lv.get(1) instanceof LazyListValue)
                 toJoin = ((LazyListValue)lv.get(1)).unroll();
             else if (lv.size() == 2 && lv.get(1) instanceof ListValue)
                 toJoin = new ArrayList<>(((ListValue)lv.get(1)).getItems());
@@ -74,7 +74,7 @@ public class DataStructures {
 
         expression.addFunction("sort", lv -> {
             List<Value> toSort = lv;
-            if (lv.size()==1 && lv.get(0) instanceof ListValue)
+            if (lv.size() == 1 && lv.get(0) instanceof ListValue)
                 toSort = new ArrayList<>(((ListValue)lv.get(0)).getItems());
             Collections.sort(toSort);
             return ListValue.wrap(toSort);
@@ -87,8 +87,8 @@ public class DataStructures {
             Value v = lv.get(0).evalValue(c);
             if (!(v instanceof ListValue))
                 throw new InternalExpressionException("First argument for 'sort_key' should be a List");
-            List<Value> toSort = new ArrayList<>(((ListValue) v).getItems());
-            if (lv.size()==1) {
+            List<Value> toSort = new ArrayList<>(((ListValue)v).getItems());
+            if (lv.size() == 1) {
                 Collections.shuffle(toSort);
                 Value ret = ListValue.wrap(toSort);
                 return (_c, _t) -> ret;
@@ -97,9 +97,9 @@ public class DataStructures {
             //scoping
             LazyValue __ = c.getVariable("_");
             Collections.sort(toSort, (v1, v2) -> {
-                c.setVariable("_",(cc, tt) -> v1);
+                c.setVariable("_", (cc, tt) -> v1);
                 Value ev1 = sortKey.evalValue(c);
-                c.setVariable("_",(cc, tt) -> v2);
+                c.setVariable("_", (cc, tt) -> v2);
                 Value ev2 = sortKey.evalValue(c);
                 return ev1.compareTo(ev2);
             });
@@ -123,9 +123,9 @@ public class DataStructures {
                 if (lv.size() > 2)
                     step = NumericValue.asNumber(lv.get(2));
             }
-            return from.isInteger() && to.isInteger() && step.isInteger() ?
-                    LazyListValue.rangeLong(from.getLong(), to.getLong(), step.getLong())
-                    : LazyListValue.rangeDouble(from.getDouble(), to.getDouble(), step.getDouble());
+            return from.isInteger() && to.isInteger() && step.isInteger()?
+                LazyListValue.rangeLong(from.getLong(), to.getLong(), step.getLong())
+                 : LazyListValue.rangeDouble(from.getDouble(), to.getDouble(), step.getDouble());
         });
 
         expression.addTypedContextFunction("m", -1, Context.MAPDEF, (c, t, lv) -> {
@@ -237,8 +237,8 @@ public class DataStructures {
                     return LazyValue.NULL;
                 Value address = ((LContainerValue)container).getAddress();
                 Value what = lv.get(1).evalValue(c);
-                Value retVal = BooleanValue.of((lv.size() > 2)
-                    ? internalContainer.put(address, what, lv.get(2).evalValue(c))
+                Value retVal = BooleanValue.of((lv.size() > 2)?
+                    internalContainer.put(address, what, lv.get(2).evalValue(c))
                     : internalContainer.put(address, what));
                 return (cc, tt) -> retVal;
             }
@@ -248,8 +248,8 @@ public class DataStructures {
                 return LazyValue.NULL;
             Value where = lv.get(1).evalValue(c);
             Value what = lv.get(2).evalValue(c);
-            Value retVal = BooleanValue.of((lv.size() > 3)
-                ? ((ContainerValueInterface)container).put(where, what, lv.get(3).evalValue(c))
+            Value retVal = BooleanValue.of((lv.size() > 3)?
+                ((ContainerValueInterface)container).put(where, what, lv.get(3).evalValue(c))
                 : ((ContainerValueInterface)container).put(where, what));
             return (cc, tt) -> retVal;
         });

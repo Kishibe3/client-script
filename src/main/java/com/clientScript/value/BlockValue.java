@@ -1,46 +1,29 @@
 package com.clientScript.value;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.clientScript.exception.InternalExpressionException;
-import com.clientScript.exception.ThrowStatement;
-import com.clientScript.exception.Throwables;
-import com.clientScript.language.API;
 import com.mojang.brigadier.StringReader;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.command.argument.BlockArgumentParser;
-import net.minecraft.nbt.NbtByte;
-import net.minecraft.nbt.NbtByteArray;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtDouble;
-import net.minecraft.nbt.NbtElement;
-import net.minecraft.nbt.NbtFloat;
-import net.minecraft.nbt.NbtInt;
-import net.minecraft.nbt.NbtIntArray;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtLong;
-import net.minecraft.nbt.NbtLongArray;
-import net.minecraft.nbt.NbtShort;
-import net.minecraft.nbt.NbtString;
 import net.minecraft.state.property.Property;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.chunk.WorldChunk;
+
+import com.clientScript.exception.InternalExpressionException;
+import com.clientScript.exception.ThrowStatement;
+import com.clientScript.exception.Throwables;
+import com.clientScript.language.API;
 
 public class BlockValue extends Value {
 	public static final BlockValue NULL = new BlockValue(null, null);
@@ -70,6 +53,7 @@ public class BlockValue extends Value {
 			this.blockState = mcc.world.getBlockState(this.pos);
 			return this.blockState;
 		}
+		//return null;
 		throw new InternalExpressionException("Attempted to fetch block state without world or stored block state");
 	}
 	
@@ -93,19 +77,21 @@ public class BlockValue extends Value {
 			BlockValue bv = BlockValue.bvCache.get(str);
 			if (bv != null)
 				return bv;
+			
 			BlockArgumentParser blockstateparser = (new BlockArgumentParser(new StringReader(str), false)).parse(true);
-			if (blockstateparser.getBlockState() != null) {
+			BlockState bs = API.BlockStateHelper(str.contains("{")? str.substring(0, str.indexOf("{")) : str);
+			if (bs != null) {
 				NbtCompound bd = blockstateparser.getNbtData();
 				if (bd == null)
 					bd = new NbtCompound();
-				bv = new BlockValue(blockstateparser.getBlockState(), null, bd);
+				bv = new BlockValue(bs, null, bd);
 				if (BlockValue.bvCache.size() > 10000)
 					BlockValue.bvCache.clear();
 				BlockValue.bvCache.put(str, bv);
 				return bv;
 			}
 		}
-		catch (CommandSyntaxException e) {}
+		catch (Exception e) {}
 		throw new ThrowStatement(str, Throwables.UNKNOWN_BLOCK);
 	}
 	
@@ -155,16 +141,42 @@ public class BlockValue extends Value {
 	public boolean equals(final Object o) {
 		if (o instanceof BlockValue) {
 			BlockValue bv = (BlockValue)o;
-			return getData().equals(bv.getData()) && getBlockState().toString().equals(bv.getBlockState().toString());
+			NbtCompound td = getData(), bd = bv.getData();
+			BlockState ts = getBlockState(), bs = bv.getBlockState();
+			if ((td == null && bd != null) || (td != null && bd == null))
+				return false;
+			if ((ts == null && bs != null) || (ts != null && bs == null))
+				return false;
+			if (td == null && bd == null && ts == null && bs == null)
+				return true;
+			if (td == null && bd == null)
+				return ts.toString().equals(bs.toString());
+			if (ts == null && bs == null)
+				return td.equals(bd);
+			return td.equals(bd) && ts.toString().equals(bs.toString());
 		}
 		return super.equals(o);
 	}
 	
-	/*
-	 * Check whether this BlockValue belongs to o type of block if o is BlockValue
-	 */
 	@Override
 	public int compareTo(Value o) {
+		if (!(o instanceof BlockValue))
+			return getString().compareTo(o.getString());
+		int ret = ((BlockValue)o).belongsTo(this);
+        if (ret >= 0)
+            return ret;
+		ret = ((BlockValue)this).belongsTo(o);
+		if (ret >= 0)
+			return -ret;
+		// Not belong to each other
+        return 2;
+	}
+
+	/*
+	 * Check whether this BlockValue belongs to o type of block if o is BlockValue
+	 * ex. block('grass_block[showy=true]') belongs to block('grass_block')
+	 */
+	public int belongsTo(Value o) {
 		if (!(o instanceof BlockValue))
 			return -1;
 		BlockValue bo = (BlockValue)o;
@@ -178,96 +190,8 @@ public class BlockValue extends Value {
 			if (this.blockState.getEntries().get(boEntry.getKey()) != boEntry.getValue())
 				return -1;
 		}
-		if (!containNBT(getData(), bo.getData()))
+		if (!API.containNBT(getData(), bo.getData()))
 			return -1;
 		return 1;
 	}
-	
-	private boolean containNBT(NbtElement a, NbtElement b) {
-		if (b == null)
-			return true;
-		if (a == null)
-			return false;
-		if (a.getType() != b.getType())
-			return false;
-		switch(a.getType()) {
-			case 0:
-				return b.getType() == 0;
-			case 1:
-				return ((NbtByte)a).equals((NbtByte)b);
-			case 2:
-				return ((NbtShort)a).equals((NbtShort)b);
-			case 3:
-				return ((NbtInt)a).equals((NbtInt)b);
-			case 4:
-				return ((NbtLong)a).equals((NbtLong)b);
-			case 5:
-				return ((NbtFloat)a).equals((NbtFloat)b);
-			case 6:
-				return ((NbtDouble)a).equals((NbtDouble)b);
-			case 7: {
-				byte[] aarray = ((NbtByteArray)a).getByteArray(), barray = ((NbtByteArray)b).getByteArray();
-				Byte[] aArray = new Byte[aarray.length], bArray = new Byte[barray.length];
-				Arrays.setAll(aArray, i -> aarray[i]);
-				Arrays.setAll(bArray, i -> barray[i]);
-				return compareList(aArray, bArray);
-			}
-			case 8:
-				return ((NbtString)a).asString().contains(((NbtString)b).asString());
-			case 9: {
-				List<NbtElement> al = new ArrayList<>(), bl = new ArrayList<>();
-				for (int i=0; i<((NbtList)a).size(); i++)
-					al.add(((NbtList)a).get(i));
-				for (int i=0; i<((NbtList)b).size(); i++)
-					bl.add(((NbtList)b).get(i));
-				Iterator<NbtElement> ibl = (new HashSet<>(bl)).iterator();
-				while (ibl.hasNext()) {
-					int count = 0;
-					NbtElement iblitem = ibl.next();
-					for (int i=0; i<al.size(); i++) {
-						if (containNBT(al.get(i), iblitem))
-							count++;
-					}
-					if (count < Collections.frequency(bl, iblitem))
-						return false;
-				}
-				return true;
-			}
-			case 10: {
-				Iterator<String> ib = ((NbtCompound)b).getKeys().iterator();
-				while (ib.hasNext()) {
-					String key = ib.next();
-					if (!containNBT(((NbtCompound)a).get(key), ((NbtCompound)b).get(key)))
-						return false;
-				}
-				return true;
-			}
-			case 11: {
-				int[] aarray = ((NbtIntArray)a).getIntArray(), barray = ((NbtIntArray)b).getIntArray();
-				Integer[] aArray = new Integer[aarray.length], bArray = new Integer[barray.length];
-				Arrays.setAll(aArray, i -> aarray[i]);
-				Arrays.setAll(bArray, i -> barray[i]);
-				return compareList(aArray, bArray);
-			}
-			case 12: {
-				long[] aarray = ((NbtLongArray)a).getLongArray(), barray = ((NbtLongArray)b).getLongArray();
-				Long[] aArray = new Long[aarray.length], bArray = new Long[barray.length];
-				Arrays.setAll(aArray, i -> aarray[i]);
-				Arrays.setAll(bArray, i -> barray[i]);
-				return compareList(aArray, bArray);
-			}
-		}
-		return true;
-	}
-	
-	private <T> boolean compareList(T[] a, T[] b) {
-		Iterator<T> ib = (new HashSet<>(Arrays.asList(b))).iterator();
-		while (ib.hasNext()) {
-			T bitem = ib.next();
-			if (Collections.frequency(Arrays.asList(a), bitem) < Collections.frequency(Arrays.asList(b), bitem))
-				return false;
-		}
-		return true;
-	}
-	
 }

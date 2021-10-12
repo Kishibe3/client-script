@@ -9,6 +9,10 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v1.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v1.FabricClientCommandSource;
 import net.fabricmc.loader.api.FabricLoader;
+//import net.minecraft.entity.Entity;
+//import net.minecraft.entity.data.DataTracker;
+//import net.minecraft.entity.data.TrackedData;
+//import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.text.LiteralText;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -54,6 +58,28 @@ public class Main implements ClientModInitializer {
 				})
 			)
 		);
+		
+		/*
+		TrackedData<Byte> FLAGS = DataTracker.registerData(Entity.class, TrackedDataHandlerRegistry.BYTE);  // something wrong
+		ClientCommandManager.DISPATCHER.register(
+			ClientCommandManager.literal("test")
+			.then(ClientCommandManager.argument("entity", StringArgumentType.greedyString())
+				.executes(c -> {
+					try {
+						Iterator<? extends Entity> le = API.getEntities(StringArgumentType.getString(c, "entity")).iterator();
+						while (le.hasNext()) {
+							Entity e = le.next();
+							e.setGlowing(true);
+						}
+					}
+					catch (Exception e) {
+						e.printStackTrace();
+					}
+					return 1;
+				})
+			)
+		);
+		*/
 	}
 
 	private static int compute(CommandContext<FabricClientCommandSource> context, String expr) throws CommandSyntaxException {
