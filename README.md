@@ -1,5 +1,14 @@
 # Client Script Mod
 
+```
+Chat on a server somewhere...
+    <me> cscript run global_afk = true
+    <me> Oops
+    <a 2b2t test server player> what is cscript?
+    <another 2b2t test server player> cum script
+**ok not funny**
+```
+
 This is a fabric mod that use the scarpet language to program and control everything you can do on client side. [See the scarpet documentation](https://github.com/gnembon/fabric-carpet/blob/master/docs/scarpet/Documentation.md).
 
 With this mod, you can write program to achieve some functionality other clients provided. You can easily customize everything that other clients usually can't do well.
