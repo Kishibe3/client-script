@@ -45,6 +45,19 @@ public class NBTSerializableValue extends Value implements ContainerValueInterfa
         return this.nbt;
     }
 
+    public Value toValue() {
+        if (this.nbt instanceof AbstractNbtNumber)
+            return new NumericValue(((AbstractNbtNumber)this.nbt).doubleValue());
+        if (this.nbt instanceof AbstractNbtList)
+            return toList(this.nbt);
+        if (this.nbt instanceof NbtString)
+            return new StringValue(this.nbt.asString());
+        if (this.nbt instanceof NbtNull)
+            return Value.NULL;
+        // NbtCompound
+        return this;
+    }
+
     private ListValue toList(NbtElement nbt) {
         if (nbt instanceof NbtByteArray)
             ((NbtByteArray)nbt).getByteArray();
@@ -164,8 +177,7 @@ public class NBTSerializableValue extends Value implements ContainerValueInterfa
             if (nbts.size() == 1 && !valString.endsWith("[]"))
                 return NBTSerializableValue.decodeNbt(nbts.get(0));
             return ListValue.wrap(nbts.stream().map(NBTSerializableValue::decodeNbt).collect(Collectors.toList()));
-        } catch (CommandSyntaxException exc) {
-        }
+        } catch (CommandSyntaxException exc) {}
         return Value.NULL;
     }
 

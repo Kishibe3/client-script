@@ -163,13 +163,13 @@ public class BlockValue extends Value {
 		if (!(o instanceof BlockValue))
 			return getString().compareTo(o.getString());
 		int ret = ((BlockValue)o).belongsTo(this);
-        	if (ret >= 0)
-            		return ret;
+        if (ret >= 0)
+            return ret;
 		ret = ((BlockValue)this).belongsTo(o);
 		if (ret >= 0)
 			return -ret;
 		// Not belong to each other
-        	return 2;
+        return 2;
 	}
 
 	/*

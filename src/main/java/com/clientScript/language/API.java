@@ -826,10 +826,10 @@ public class API {
 
             if (le.size() != 1)
                 throw new InternalExpressionException("Should only select one entity.");
-            EntityValue e = new EntityValue(le.get(0));
-            String path = lv.get(1).getString();
+            
             try {
-                return new NBTSerializableValue(e.getData(path));
+                NbtElement nbt = new EntityValue(le.get(0)).getData(lv.get(1).getString());
+                return new NBTSerializableValue(nbt).toValue();
             } catch (Exception exc) {}
             return Value.NULL;
         });
